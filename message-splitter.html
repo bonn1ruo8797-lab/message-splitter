@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>訊息拆分器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #f0c040;
+    --accent2: #e87040;
+    --text: #f0ede8;
+    --text-dim: #888;
+    --green: #4ade80;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    margin-top: 6px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* Input section */
+  .input-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea::placeholder { color: var(--text-dim); }
+
+  /* Buttons row */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-split {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #111;
+    flex: 2;
+  }
+
+  .btn-split:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-split:active { transform: translateY(0); }
+
+  .btn-reset {
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .btn-reset:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* Stats */
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-pill strong {
+    color: var(--accent);
+    font-size: 1rem;
+  }
+
+  /* Results */
+  .results-section { display: none; }
+  .results-section.visible { display: block; }
+
+  .results-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+
+  .vendor-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .vendor-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .vendor-card.copied-state {
+    border-color: var(--green);
+  }
+
+  .vendor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vendor-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vendor-name .badge {
+    background: var(--accent);
+    color: #111;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .vendor-content {
+    padding: 14px 16px;
+    font-size: 0.93rem;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+    min-height: 40px;
+  }
+
+  .vendor-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .btn-copy {
+    padding: 9px 22px;
+    border: none;
+    border-radius: 7px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 90px;
+    justify-content: center;
+  }
+
+  .btn-copy:hover:not(:disabled) {
+    background: var(--accent);
+    color: #111;
+    border-color: var(--accent);
+  }
+
+  .btn-copy:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .btn-copy.done {
+    background: #1a3a27;
+    color: var(--green);
+    border-color: var(--green);
+    cursor: default;
+  }
+
+  /* Empty vendor notice */
+  .empty-vendor {
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.85rem;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: #111;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 10px 24px;
+    border-radius: 30px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>✂ 訊息拆分器</h1>
+    <p>貼入訊息，以空白行分隔廠商，一鍵複製發送</p>
+  </header>
+
+  <div class="input-section">
+    <div class="section-label">📋 貼入訊息</div>
+    <textarea id="inputText" placeholder="在此貼入要拆分的訊息&#10;&#10;空白行 = 廠商分隔點&#10;&#10;例如：&#10;綠竹筍500&#10;&#10;木耳1.5斤&#10;芹菜2斤"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-split" onclick="splitMessage()">✂ 開始拆分</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ 重置</button>
+    </div>
+  </div>
+
+  <div id="statsBar" class="stats" style="display:none"></div>
+
+  <div id="resultsSection" class="results-section">
+    <div class="results-label">拆分結果</div>
+    <div id="vendorCards" class="vendor-cards"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast">✓ 已複製！</div>
+
+<script>
+  const VENDOR_NAMES = ['A','B','C','D','E','F','G','H','I','J','K','L','M',
+                        'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+
+  // Store vendor texts here so onclick doesn't need to inline the string
+  let vendorTexts = [];
+
+  function splitMessage() {
+    const raw = document.getElementById('inputText').value;
+    if (!raw.trim()) {
+      showToast('⚠ 請先貼入訊息');
+      return;
+    }
+
+    // Split by one or more blank lines (lines with only spaces/tabs also count as blank)
+    const blocks = raw.split(/\n[ \t]*\n/);
+
+    // Filter: keep all blocks (even empty ones between separators count as vendor slots)
+    // But trim leading/trailing whitespace from each block
+    const vendors = blocks.map(b => b.trim());
+
+    renderVendors(vendors);
+
+    // Stats
+    const statsBar = document.getElementById('statsBar');
+    statsBar.style.display = 'flex';
+    statsBar.innerHTML = `
+      <div class="stat-pill">共 <strong>${vendors.length}</strong> 個廠商</div>
+      <div class="stat-pill">原始行數 <strong>${raw.split('\n').length}</strong> 行</div>
+    `;
+
+    document.getElementById('resultsSection').classList.add('visible');
+
+    // Scroll to results
+    setTimeout(() => {
+      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  function renderVendors(vendors) {
+    vendorTexts = vendors; // store for copyVendor to reference by index
+    const container = document.getElementById('vendorCards');
+    container.innerHTML = '';
+
+    vendors.forEach((content, i) => {
+      const name = i < VENDOR_NAMES.length ? `廠商 ${VENDOR_NAMES[i]}` : `廠商 ${i + 1}`;
+      const label = i < VENDOR_NAMES.length ? VENDOR_NAMES[i] : String(i + 1);
+
+      const card = document.createElement('div');
+      card.className = 'vendor-card';
+      card.id = `card-${i}`;
+
+      const isEmpty = content === '';
+
+      card.innerHTML = `
+        <div class="vendor-header">
+          <div class="vendor-name">
+            <span class="badge">${label}</span>
+            ${name}
+          </div>
+          <span style="font-size:0.78rem;color:var(--text-dim)">${isEmpty ? '（空白）' : content.split('\n').length + ' 行'}</span>
+        </div>
+        <div class="vendor-content">${isEmpty ? '<span class="empty-vendor">此廠商無內容</span>' : escapeHtml(content)}</div>
+        <div class="vendor-footer">
+          <button class="btn-copy" id="copybtn-${i}" onclick="copyVendor(${i})" ${isEmpty ? 'disabled' : ''}>
+            <span id="copyicon-${i}">📋</span>
+            <span id="copytext-${i}">複製</span>
+          </button>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  function copyVendor(index) {
+    const text = vendorTexts[index];
+    if (text === undefined) return;
+    const btn = document.getElementById(`copybtn-${index}`);
+    const icon = document.getElementById(`copyicon-${index}`);
+    const label = document.getElementById(`copytext-${index}`);
+    const card = document.getElementById(`card-${index}`);
+
+    // Try clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        markCopied(btn, icon, label, card);
+      }).catch(() => {
+        fallbackCopy(text, btn, icon, label, card);
+      });
+    } else {
+      fallbackCopy(text, btn, icon, label, card);
+    }
+  }
+
+  function fallbackCopy(text, btn, icon, label, card) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      markCopied(btn, icon, label, card);
+    } catch(e) {
+      showToast('⚠ 複製失敗，請手動選取');
+    }
+    document.body.removeChild(ta);
+  }
+
+  function markCopied(btn, icon, label, card) {
+    btn.classList.add('done');
+    btn.disabled = true;
+    icon.textContent = '✓';
+    label.textContent = '已複製';
+    card.classList.add('copied-state');
+    showToast('✓ 已複製！');
+  }
+
+  function resetAll() {
+    vendorTexts = [];
+    document.getElementById('inputText').value = '';
+    document.getElementById('vendorCards').innerHTML = '';
+    document.getElementById('resultsSection').classList.remove('visible');
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('inputText').focus();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+</script>
+</body>
+</html>
