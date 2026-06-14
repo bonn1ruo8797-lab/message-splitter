@@ -478,8 +478,57 @@
     document.getElementById('vendorCards').innerHTML = '';
     document.getElementById('resultsSection').classList.remove('visible');
     document.getElementById('statsBar').style.display = 'none';
+    clearSavedDraft();
     document.getElementById('inputText').focus();
   }
+
+  /* ---------- Auto-save draft (so closing the page doesn't lose input) ---------- */
+  const DRAFT_KEY = 'messageSplitterDraft';
+
+  function saveDraft() {
+    const text = document.getElementById('inputText').value;
+    try {
+      if (text.trim()) {
+        localStorage.setItem(DRAFT_KEY, text);
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } catch (e) {
+      // localStorage unavailable (e.g. private browsing) - silently ignore
+    }
+  }
+
+  function clearSavedDraft() {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (e) {}
+  }
+
+  function restoreDraft() {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        document.getElementById('inputText').value = saved;
+        showToast('↺ 已還原上次未送出的內容');
+      }
+    } catch (e) {}
+  }
+
+  // Debounce helper so we don't write to localStorage on every keystroke
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveDraft, 400);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    restoreDraft();
+    document.getElementById('inputText').addEventListener('input', scheduleSave);
+    // Also save immediately if user pastes
+    document.getElementById('inputText').addEventListener('paste', () => {
+      setTimeout(saveDraft, 50);
+    });
+  });
 
   function showToast(msg) {
     const t = document.getElementById('toast');
